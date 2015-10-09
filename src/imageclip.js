@@ -25,14 +25,22 @@ module.exports = function(Bookshelf, pluginOpts) {
 
   var Model = Bookshelf.Model.extend({
     set: function( key, val, options ) {
-      var attrs;
-      if( typeof key === 'object' && !( val && val.unset) && 
+      if( this.imageClip &&
+         !( val && val.unset) && 
          !( options && options.unset ) ) {
-        if( typeof key.avatar === 'string' ) {
-          key.avatar_source = key.avatar;
-          delete key.avatar;
+
+        if( typeof key === 'object' ) {
+          _.each( this.imageClip, function( v, field ) { 
+            if( typeof key[ field ] === 'string' ) {
+              key[ field + '_source' ] = key[ field ];
+              delete key[ field ];
+            }
+          } );
         }
-      } else {
+        else if( typeof key === 'string' ) {
+          if( typeof this.imageClip[ key ] === 'string' )
+            key += '_source';
+        }
       }
 
       return proto.set.call( this, key, val, options );

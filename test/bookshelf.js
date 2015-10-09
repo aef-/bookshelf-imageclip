@@ -54,12 +54,16 @@ describe('Bookshelf', function() {
     this.User = bookshelf.model('User', this.User);
   });
 
-  it('should overload attribute with object of styles', function() {
+  it('should overload attributes when data passed through forge', function() {
     var testUser = this.User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
     return testUser.save().then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
+
+      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
+      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
+      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -71,4 +75,48 @@ describe('Bookshelf', function() {
       fs.statSync( user.get("avatar").thumb );
     });
   });
+  it('should should overload attributes when data passed through save as object', function() {
+    var testUser = this.User.forge();
+    return testUser.save({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"}).then(function(user) {
+      user.get("avatar").should.have.property( "original" );
+      user.get("avatar").should.have.property( "medium" );
+      user.get("avatar").should.have.property( "thumb" );
+
+      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
+      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
+      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+
+      var serialized = testUser.toJSON( );
+      serialized.avatar.should.have.property( "original" );
+      serialized.avatar.should.have.property( "medium" );
+      serialized.avatar.should.have.property( "thumb" );
+
+      fs.statSync( user.get("avatar").original );
+      fs.statSync( user.get("avatar").medium );
+      fs.statSync( user.get("avatar").thumb );
+    });
+  });
+  it('should should overload attributes when data passed through save as arguments', function() {
+    var testUser = this.User.forge();
+    return testUser.save( "avatar", "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png").then(function(user) {
+      user.get("avatar").should.have.property( "original" );
+      user.get("avatar").should.have.property( "medium" );
+      user.get("avatar").should.have.property( "thumb" );
+
+      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
+      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
+      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+
+      var serialized = testUser.toJSON( );
+      serialized.avatar.should.have.property( "original" );
+      serialized.avatar.should.have.property( "medium" );
+      serialized.avatar.should.have.property( "thumb" );
+
+      fs.statSync( user.get("avatar").original );
+      fs.statSync( user.get("avatar").medium );
+      fs.statSync( user.get("avatar").thumb );
+    });
+  });
+
+
 });
