@@ -1,12 +1,14 @@
 # bookshelf-imageclip
 
+THIS PACKAGE DOES NOT HAVE A STABLE RELEASE JUST YET. USAGE MAY CHANGE. SEE MILESTONES.
+
 ## Installation
 > npm install bookshelf-imageclip
 
 ## Usage
 Best to look at the tests.
 
-Your schema must include <field>_file_name.
+Your schema must include ```<field>_file_name```.
 ```js
 bookshelf.Model.extend({
   tableName: 'users',
