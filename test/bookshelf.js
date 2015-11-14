@@ -139,5 +139,10 @@ describe('Bookshelf', function() {
       user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
     } );
   } );
+  it('should return undefined when not set', function( done ) {
+    var testUser = this.User.forge();
+    should.not.exist(testUser.get( "avatar" ));
+    done( );
+  } );
 
 });

@@ -40,13 +40,14 @@ module.exports = function(Bookshelf, pluginOpts) {
         _.each( this.imageClip, ( styles, field ) => { 
           this.virtuals[ field ] = { 
             get( ) {
-              return _.mapValues( styles, ( style, styleName ) => {
-                return path.join( this.imageClipProcessor
-                                      .generateFilePath( 
-                                        basePath, field, styleName, 
-                                        this.get( `${field}_file_name` ) ), 
-                                  this.get( `${field}_file_name` ) );
-              } );
+              if( this.get( `${field}_file_name` ) )
+                return _.mapValues( styles, ( style, styleName ) => {
+                  return path.join( this.imageClipProcessor
+                                        .generateFilePath( 
+                                          basePath, field, styleName, 
+                                          this.get( `${field}_file_name` ) ), 
+                                    this.get( `${field}_file_name` ) );
+                } );
             },
             set( source ) {
               this.set( `${field}_file_name`, 
