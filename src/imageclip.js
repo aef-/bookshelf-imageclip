@@ -1,164 +1,124 @@
+"use strict";
 module.exports = function(Bookshelf, pluginOpts) {
   
-  var _       = require('lodash'),
-      Promise = require('bluebird'),
-      gm      = Promise.promisifyAll(require('gm')),
-      path    = require('path'),
-      crypto  = require('crypto'),
-      //request = require("request"),
-      request = Promise.promisifyAll(require("request")),
-      fs      = Promise.promisifyAll(require('fs-extra')),
-      md5     = crypto.createHash('md5');
+  Bookshelf.plugin('virtuals');
+
+  const _       = require('lodash'),
+    Promise = require('bluebird'),
+    path    = require('path'),
+    crypto  = require('crypto'),
+    //request = require("request"),
+    request = Promise.promisifyAll(require("request")),
+    fs      = Promise.promisifyAll(require('fs-extra')),
+    md5     = crypto.createHash('md5');
+
+  let gm = Promise.promisifyAll(require('gm'));
 
   Promise.promisifyAll(gm.prototype);
 
-  var pluginOpts = _.defaults( pluginOpts || { }, { 
+  const options = _.defaults( pluginOpts || { }, { 
     useImageMagick: false,
     path: "./images",
     storage: "file"
   } );
 
-  if( pluginOpts.useImageMagick )
+  if( options.useImageMagick )
     gm = gm.subClass({ imageMagick: true });
 
-  var proto = Bookshelf.Model.prototype;
+  const proto = Bookshelf.Model.prototype;
 
-  var Model = Bookshelf.Model.extend({
-    set: function( key, val, options ) {
-      if( this.imageClip &&
-         !( val && val.unset) && 
-         !( options && options.unset ) ) {
-
-        if( typeof key === 'object' ) {
-          _.each( this.imageClip, function( v, field ) { 
-            if( typeof key[ field ] === 'string' ) {
-              key[ field + '_source' ] = key[ field ];
-              delete key[ field ];
-            }
-          } );
-        }
-        else if( typeof key === 'string' ) {
-          if( typeof this.imageClip[ key ] === 'string' )
-            key += '_source';
-        }
-      }
-
-      return proto.set.call( this, key, val, options );
-    },
-    _reset: function( ) {
-      if( this.imageClip ) {
-        this._previousAttributes = _.extend( _.clone( this.attributes ),
-          this.imageClipProcessor.getAttributes( this ) );
-        this.changed = Object.create(null);
-        return this;
-      }
-      else
-        return proto._reset.apply( this, arguments );
-    },
+  const Model = Bookshelf.Model.extend({
+    virtuals: { },
     constructor: function( ) {
       if( this.imageClip) {
-        if( typeof pluginOpts.storage == "string" )
-          this.imageClipStorage = new ( require( "./storage/" + pluginOpts.storage ) );
+        const basePath  = options.path;
+        if( typeof options.storage == "string" )
+          this.imageClipStorage = new ( require( "./storage/" + options.storage ) );
         else
-          this.imageClipStorage = pluginOpts.storage;
+          this.imageClipStorage = options.storage;
+
+        _.each( this.imageClip, ( styles, field ) => { 
+          this.virtuals[ field ] = { 
+            get( ) {
+              return _.mapValues( styles, ( style, styleName ) => {
+                return path.join( this.imageClipProcessor
+                                      .generateFilePath( 
+                                        basePath, field, styleName, 
+                                        this.get( `${field}_file_name` ) ), 
+                                  this.get( `${field}_file_name` ) );
+              } );
+            },
+            set( source ) {
+              this.set( `${field}_file_name`, 
+                   this.imageClipProcessor.generateFileName( source ) );
+            }
+          }
+        } );
 
         this.on( "saving", this.imageClipProcessor.save );
-        this.on( "saved", this.imageClipProcessor.updateAttributes );
         this.on( "destroyed", this.imageClipProcessor.destroy );
-        //this.on( "updated", this.imageClipProcessor.destroy );
       }
 
       proto.constructor.apply( this, arguments );
     },
 
-    format: function( attributes ) {
-      var formattedAttributes = proto.format.apply( this, arguments );
-
-      if( this.imageClip) {
-        var keys = _.keys( this.imageClip ) 
-        formattedAttributes = _.omit( formattedAttributes,  
-                keys.concat( _.map( keys, function( k ) { return k + "_source" } ) ) );
-      }
-
-      return formattedAttributes;
-    },
-
-
     imageClipProcessor: {
-      save: function( model, attributes, opts ) {
-        return Promise.all( this.imageClipProcessor.saveImages.apply( this, arguments ) );
+      save( model, attributes, opts ) {
+        return Promise.all( 
+                this.imageClipProcessor.saveImages.apply( this, arguments ) );
       },
 
-      saveImages: function( model, attributes, opts ) {
-        var basePath  = pluginOpts.path;
-        return _.flatten( _.map( this.imageClip, function( styles, field ) {
-          var fileName = this.imageClipProcessor.generateFileName( model.get( field + "_source" ) );
-          model.set( field + "_file_name", fileName );
-
-          return _.map( styles, function( styleOpts, styleName ) {
-            if( model.hasChanged( field + "_source" ) && model.has( field + "_source" ) ) {
-              var filePath = this.imageClipProcessor.generateFilePath(basePath, field, styleName, fileName);
-              return new Promise( function( resolve, reject ) { 
-                //return request( model.get( field ) ) );
-                return fs.mkdirpAsync( filePath ).then( function( ) {
-                  var req = request( model.get( field + "_source" ) )
+      saveImages( model, attributes, opts ) {
+        const basePath  = options.path;
+        return _.flatten( _.map( this.imageClip, ( styles, field ) => {
+          return _.map( styles, ( styleOpts, styleName ) => {
+            const fileName = model.get( `${field}_file_name` );
+            if( attributes[ field ] ) {
+              const filePath = this.imageClipProcessor
+                  .generateFilePath(basePath, field, styleName, fileName);
+              return new Promise( ( resolve, reject ) => { 
+                return fs.mkdirpAsync( filePath ).then( ( ) => {
+                  const req = request( attributes[ field ] )
                                 .on( "error", reject );
                   return gm( req );
-                }.bind( this ) )
-                .then( function( gm ) {
+                } )
+                .then( gm => {
                   return styleOpts.process( gm, model, attributes, opts )
-                    .stream( function (err, stdout, stderr) { 
+                    .stream( (err, stdout, stderr) => { 
                       stdout.on( "end", resolve );
                       stdout.on( "error", reject );
                       stdout.pipe(this.imageClipStorage.write(
                         path.join( filePath, fileName ) ) );
-                    }.bind( this ) );
-                }.bind( this ) )
-              }.bind( this ) )
+                    } );
+                } )
+              } );
             }
-          }, this );
-        }, this ) );
+          } );
+        } ) );
       },
 
-      destroy: function( model, attributes, opts ) {
-        var basePath  = pluginOpts.path;
-        return _.flatten( _.map( this.imageClip, function( styles, field ) {
-          return _.map( styles, function( styleOpts, styleName ) {
-            return fs.removeAsync( model.previous( field )[ styleName ] );
+      destroy( model, attributes, opts ) {
+        const basePath  = options.path;
+        return _.flatten( this.imageClip.map( ( styles, field ) => {
+          return styles.map( ( styleOpts, styleName ) => {
+            return fs.removeAsync( model.get( field )[ styleName ] );
             //TODO remove empty directories here?
-          }, this );
-        }, this ) );
+          } );
+        } ) );
       }, 
 
-      updateAttributes: function( model, attr ) {
-        model.set( this.imageClipProcessor.getAttributes( model ) );
-      },
-
-      getAttributes: function( model ) {
-        var basePath = pluginOpts.path;
-        return _.mapValues( model.imageClip, function( styles, field ) {
-          if( !model.has( field + "_file_name" ) )
-            return;
-          return _.mapValues( styles, function( style, styleName ) {
-            return path.join( model.imageClipProcessor.generateFilePath( basePath, field, styleName, 
-                    model.get( field + "_file_name" ) ), model.get( field + "_file_name" ) );
-          } );
-        } );
-      },
-
-      removeEmptyFolders: function(filePath) {
-        var basePath  = pluginOpts.path,
+      removeEmptyFolders(filePath) {
+        const basePath  = options.path,
             directoryPath = path.relative(basePath, filePath),
-            directories = directoryPath.split(path.sep),
-            directory;
+            directories = directoryPath.split(path.sep);
       },
 
-      generateFileName: function(fieldValue) {
+      generateFileName(fieldValue) {
         return path.basename(fieldValue);
       },
 
-      generateFilePath: function(basePath, fieldName, styleName, fileName) {
-        var hash = crypto.createHash('md5').update(fileName).digest('hex'),
+      generateFilePath(basePath, fieldName, styleName, fileName) {
+        const hash = crypto.createHash('md5').update(fileName).digest('hex'),
             tokens = hash.match( /(\w{3})(\w{3})/ );
 
         return path.join(basePath, tokens[1], tokens[2], fieldName, styleName );
@@ -166,7 +126,5 @@ module.exports = function(Bookshelf, pluginOpts) {
     },
   } );
 
-  
-  // Replacement.
   Bookshelf.Model = Model;
 };

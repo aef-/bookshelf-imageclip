@@ -30,6 +30,12 @@ describe('Bookshelf', function() {
   before(function() {
     this.User = bookshelf.Model.extend({
       tableName: 'users',
+      virtuals: { 
+        noopVirtual: {
+          set( ) { },
+          get( ) { return "noop"; }
+        },
+      },
       imageClip: {
         avatar: {
           original: {
@@ -75,7 +81,7 @@ describe('Bookshelf', function() {
       fs.statSync( user.get("avatar").thumb );
     });
   });
-  it('should should overload attributes when data passed through save as object', function() {
+  it('should overload attributes when data passed through save as object', function() {
     var testUser = this.User.forge();
     return testUser.save({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"}).then(function(user) {
       user.get("avatar").should.have.property( "original" );
@@ -96,7 +102,7 @@ describe('Bookshelf', function() {
       fs.statSync( user.get("avatar").thumb );
     });
   });
-  it('should should overload attributes when data passed through save as arguments', function() {
+  it('should overload attributes when data passed through save as arguments', function() {
     var testUser = this.User.forge();
     return testUser.save( "avatar", "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png").then(function(user) {
       user.get("avatar").should.have.property( "original" );
@@ -118,5 +124,20 @@ describe('Bookshelf', function() {
     });
   });
 
+  it('should not override existing virtuals', function() {
+    var testUser = this.User.forge();
+    testUser.get( "noopVirtual" ).should.equal( "noop" );
+  } );
+  it('should save filename to database', function() {
+    var testUser = this.User.forge();
+
+    return testUser.save( "avatar", "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png").then(user => {
+      const id = user.get( "id" );
+      return this.User.forge( { id: id } ).fetch( )
+    } )
+    .then( function( user ) {
+      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+    } );
+  } );
 
 });
