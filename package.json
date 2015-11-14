@@ -1,6 +1,6 @@
 {
   "name": "bookshelf-imageclip",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Image attachments with Bookshelf.js",
   "main": "src/imageclip.js",
   "scripts": {
