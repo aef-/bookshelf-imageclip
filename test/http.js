@@ -2,7 +2,7 @@
 
 var Promise = require('bluebird'),
     should  = require('should'),
-    fs      = require('fs-extra'),
+    fs = Promise.promisifyAll(require('fs-extra')),
     assert = require('assert');
 
 var knex = require('knex')({
@@ -13,56 +13,56 @@ var knex = require('knex')({
 var bookshelf = require('bookshelf')(knex);
 bookshelf.plugin('registry');
 bookshelf.plugin(require('../src/imageclip'), {useImageMagick: true});
+const User = bookshelf.Model.extend({
+  tableName: 'users',
+  imageClip: {
+    avatar: {
+      original: {
+        process: function( gmInst, model ) {
+          return gmInst;
+        }
+      },
+      medium: {
+        process: function( gmInst, model ) {
+          return gmInst.resize( "500x500" ) ;
+        }
+      },
+      thumb: {
+        process: function( gmInst, model ) {
+          return gmInst.resize( "100x100" ) ;
+        }
+      }
+    }
+  }
+});
 
 describe('HTTP', function() {
   this.timeout(20000);
 
-  before(function() {
-    return Promise.all([
-      knex.schema.dropTableIfExists('users').then(function() {
+  beforeEach(function() {
+    return knex.schema.dropTableIfExists('users')
+      .then(function() {
         return knex.schema.createTable('users', function(t) {
           t.increments('id').primary();
           t.string('avatar_file_name');
         });
       })
-    ]);
-  });
-
-  before(function() {
-    this.User = bookshelf.Model.extend({
-      tableName: 'users',
-      imageClip: {
-        avatar: {
-          original: {
-            process: function( gmInst, model ) {
-              return gmInst;
-            }
-          },
-          medium: {
-            process: function( gmInst, model ) {
-              return gmInst.resize( "500x500" ) ;
-            }
-          },
-          thumb: {
-            process: function( gmInst, model ) {
-              return gmInst.resize( "100x100" ) ;
-            }
-          }
-        }
-      }
-    });
-
-    this.User = bookshelf.model('User', this.User);
+      .then( ( ) => {
+        return fs.removeAsync( './images' );
+      } )
   });
 
   it('can save new record', function() {
-    var testUser = this.User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
+    var testUser = User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
     return testUser.save().then(function(user) {
+      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( user.get("avatar").original );
+      fs.statSync( user.get("avatar").medium );
     });
   });
 
   it('can update record', function() {
-    var testUser = this.User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
+    var testUser = User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
     return testUser
       .save(null, { method: "insert" } )
       .then(function(user) {
@@ -82,7 +82,7 @@ describe('HTTP', function() {
   });
 
   it('fails on not found', function() {
-    var testUser = this.User.forge({ avatar: "http://image-does-not-exist.com/test.jpg"});
+    var testUser = User.forge({ avatar: "http://image-does-not-exist.com/test.jpg"});
     return testUser
       .save()
       .then(function(user) {
@@ -93,22 +93,26 @@ describe('HTTP', function() {
   });
 
 
-  it.skip('can destroy', function() {
+  it('INCOMPLETE: can destroy', function() {
     //TODO Files are deleted in an event after model is destroyed. Need to dive deeper
     //to see a good way to test for this.
-    var testUser = this.User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"}), previous;
+    var testUser = User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"}), previous;
 
     return testUser.save( ).then( function( user ) {
       previous = user.get( "avatar" );
-      return user.destroy( );
+
+      fs.statSync( user.get("avatar").thumb );
+      //return user.destroy( );
     })
     .then(function( ) {
+      /*
       assert.throws( function( ) { fs.statSync( previous.thumb ) }, 
                     "Old thumb still exists" );
       assert.throws( function( ) { fs.statSync( previous.original ) }, 
                     "Old original still exists" );
       assert.throws( function( ) { fs.statSync( previous.medium ) }, 
                     "Old medium still exists" );
+                   */
     });
 
   });
