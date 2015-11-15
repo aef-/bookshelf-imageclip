@@ -115,7 +115,7 @@ module.exports = function(Bookshelf, pluginOpts) {
       },
 
       generateFileName(fieldValue) {
-        return path.basename(fieldValue);
+        return path.basename(fieldValue.split('?')[0]);
       },
 
       generateFilePath(basePath, fieldName, styleName, fileName) {

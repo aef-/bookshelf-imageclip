@@ -145,4 +145,23 @@ describe('Bookshelf', function() {
     done( );
   } );
 
+  it('should save jpeg', function() {
+    var testUser = this.User.forge();
+    return testUser.save( "avatar", "https://upload.wikimedia.org/wikipedia/commons/1/15/Jpegvergroessert.jpg").then(function(user) {
+      user.get("avatar").should.have.property( "original" );
+      user.get("avatar").should.have.property( "medium" );
+      user.get("avatar").should.have.property( "thumb" );
+
+      var serialized = testUser.toJSON( );
+      serialized.avatar.should.have.property( "original" );
+      serialized.avatar.should.have.property( "medium" );
+      serialized.avatar.should.have.property( "thumb" );
+
+      fs.statSync( user.get("avatar").original );
+      fs.statSync( user.get("avatar").medium );
+      fs.statSync( user.get("avatar").thumb );
+    });
+  });
+
+
 });
