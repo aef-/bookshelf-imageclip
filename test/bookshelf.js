@@ -59,15 +59,15 @@ describe('Bookshelf', function() {
   });
 
   it('should overload attributes when data passed through forge', function() {
-    var testUser = User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
+    var testUser = User.forge({ avatar: "./test/fixtures/earth.jpg"});
     return testUser.save().then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
-      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
-      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -81,14 +81,14 @@ describe('Bookshelf', function() {
   });
   it('should overload attributes when data passed through save as object', function() {
     var testUser = User.forge();
-    return testUser.save({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"}).then(function(user) {
+    return testUser.save({ avatar: "./test/fixtures/earth.jpg"}).then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
-      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
-      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -102,14 +102,14 @@ describe('Bookshelf', function() {
   });
   it('should overload attributes when data passed through save as arguments', function() {
     var testUser = User.forge();
-    return testUser.save( "avatar", "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png").then(function(user) {
+    return testUser.save( "avatar", "./test/fixtures/earth.jpg").then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/244/8ea/avatar/original/Lenna.png")
-      user.get("avatar").medium.should.equal("images/244/8ea/avatar/medium/Lenna.png")
-      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -129,12 +129,12 @@ describe('Bookshelf', function() {
   it('should save filename to database', function() {
     var testUser = User.forge();
 
-    return testUser.save( "avatar", "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png").then(user => {
+    return testUser.save( "avatar", "./test/fixtures/earth.jpg").then(user => {
       const id = user.get( "id" );
       return User.forge( { id: id } ).fetch( )
     } )
     .then( function( user ) {
-      user.get("avatar").thumb.should.equal("images/244/8ea/avatar/thumb/Lenna.png")
+      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
     } );
   } );
   it('should return undefined when not set', function( done ) {
@@ -145,7 +145,7 @@ describe('Bookshelf', function() {
 
   it('should save jpeg', function() {
     var testUser = User.forge();
-    return testUser.save( "avatar", "https://upload.wikimedia.org/wikipedia/commons/1/15/Jpegvergroessert.jpg").then(function(user) {
+    return testUser.save( "avatar", "./test/fixtures/earth.jpg").then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );

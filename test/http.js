@@ -12,7 +12,7 @@ var knex = require('knex')({
 
 var bookshelf = require('bookshelf')(knex);
 bookshelf.plugin('registry');
-bookshelf.plugin(require('../src/imageclip'), {useImageMagick: true});
+bookshelf.plugin(require('../src/imageclip'), {useImageMagick: true, adapter: 'http'});
 const User = bookshelf.Model.extend({
   tableName: 'users',
   imageClip: {

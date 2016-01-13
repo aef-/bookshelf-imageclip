@@ -7,19 +7,16 @@ module.exports = function(Bookshelf, pluginOpts) {
     Promise = require('bluebird'),
     path    = require('path'),
     crypto  = require('crypto'),
-    //request = require("request"),
-    request = Promise.promisifyAll(require("request")),
     md5     = crypto.createHash('md5');
-
-  let gm = Promise.promisifyAll(require('gm'));
-
-  Promise.promisifyAll(gm.prototype);
 
   const options = _.defaults( pluginOpts || { }, { 
     useImageMagick: false,
     path: "./images",
-    storage: "file"
+    storage: "file",
+    adapter: "file-path"
   } );
+
+  let gm = Promise.promisifyAll(require('gm'));
 
   if( options.useImageMagick )
     gm = gm.subClass({ imageMagick: true });
@@ -35,6 +32,11 @@ module.exports = function(Bookshelf, pluginOpts) {
           this.imageClipStorage = new ( require( "./storage/" + options.storage ) );
         else
           this.imageClipStorage = options.storage;
+
+        if( typeof options.storage == "string" )
+          this.imageClipAdapter = require( "./adapters/" + options.adapter );
+        else
+          this.imageClipAdapter = options.adapter;
 
         _.each( this.imageClip, ( styles, field ) => { 
           this.virtuals[ field ] = { 
@@ -65,15 +67,15 @@ module.exports = function(Bookshelf, pluginOpts) {
     },
 
     format: function( attributes ) {
-      let formattedAttributes = proto.format.apply( this, arguments );
+      const formattedAttributes = proto.format.apply( this, arguments );
 
       if( this.imageClip) {
-        let keys = _.keys( this.imageClip ) 
-        formattedAttributes = _.omit( formattedAttributes,  
+        const keys = _.keys( this.imageClip ) 
+        return _.omit( formattedAttributes,  
           keys.concat( keys.map( k => `${k}_source` ) ) );
       }
-
-      return formattedAttributes;
+      else
+        return formattedAttributes;
     },
 
     imageClipProcessor: {
@@ -93,9 +95,8 @@ module.exports = function(Bookshelf, pluginOpts) {
               const filePath = this.imageClipProcessor
                   .generateFilePath(basePath, field, styleName, fileName);
               return new Promise( ( resolve, reject ) => { 
-                const req = request( attributes[ `${field}_source` ] )
-                                .on( "error", reject );
-                return styleOpts.process( gm(req), model, attributes, opts )
+                const file = this.imageClipAdapter(attributes[ `${field}_source`], reject);
+                return styleOpts.process( gm(file), model, attributes, opts )
                     .stream( (err, stdout, stderr) => { 
                       if( err )
                         return reject( err );
