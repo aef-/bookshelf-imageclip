@@ -13,7 +13,7 @@ module.exports = function(Bookshelf, pluginOpts) {
     useImageMagick: false,
     path: "./images",
     storage: "file",
-    adapter: "file-path"
+    adapter: "local-file"
   } );
 
   let gm = Promise.promisifyAll(require('gm'));
@@ -53,8 +53,9 @@ module.exports = function(Bookshelf, pluginOpts) {
             set( source ) {
               this.set( `${field}_source`, source );
 
-              this.set( `${field}_file_name`, 
-                   this.imageClipProcessor.generateFileName( source ) );
+              this.set( `${field}_file_name`,  
+                   this.imageClipProcessor.generateFileName( 
+                            this.imageClipAdapter.getFileName( source ) ) );
             }
           }
         } );
@@ -95,7 +96,8 @@ module.exports = function(Bookshelf, pluginOpts) {
               const filePath = this.imageClipProcessor
                   .generateFilePath(basePath, field, styleName, fileName);
               return new Promise( ( resolve, reject ) => { 
-                const file = this.imageClipAdapter(attributes[ `${field}_source`], reject);
+                const file = this.imageClipAdapter.getFilePath(attributes[ `${field}_source`], reject);
+                console.info( file );
                 return styleOpts.process( gm(file), model, attributes, opts )
                     .stream( (err, stdout, stderr) => { 
                       if( err )
