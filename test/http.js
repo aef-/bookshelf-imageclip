@@ -55,9 +55,9 @@ describe('HTTP', function() {
   it('can save new record', function() {
     var testUser = User.forge({ avatar: "http://upload.wikimedia.org/wikipedia/en/2/24/Lenna.png"});
     return testUser.save().then(function(user) {
-      fs.statSync( user.get("avatar").thumb );
-      fs.statSync( user.get("avatar").original );
-      fs.statSync( user.get("avatar").medium );
+      fs.statSync( "." + user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").original );
+      fs.statSync( "." + user.get("avatar").medium );
     });
   });
 
@@ -69,14 +69,14 @@ describe('HTTP', function() {
         return testUser.save({ avatar: "https://upload.wikimedia.org/wikipedia/commons/d/df/The_Fabs.JPG"}, { method: "update" } );
       })
       .then(function(user) {
-        fs.statSync( user.get("avatar").thumb );
-        fs.statSync( user.get("avatar").original );
-        fs.statSync( user.get("avatar").medium );
-        assert.throws( function( ) { fs.statSync( previous.thumb ) }, 
+        fs.statSync( "." + user.get("avatar").thumb );
+        fs.statSync( "." + user.get("avatar").original );
+        fs.statSync( "." + user.get("avatar").medium );
+        assert.throws( function( ) { fs.statSync( "." + previous.thumb ) }, 
                       "Old thumb still exists" );
-        assert.throws( function( ) { fs.statSync( previous.original ) }, 
+        assert.throws( function( ) { fs.statSync( "." + previous.original ) }, 
                       "Old original still exists" );
-        assert.throws( function( ) { fs.statSync( previous.medium ) }, 
+        assert.throws( function( ) { fs.statSync( "." + previous.medium ) }, 
                       "Old medium still exists" );
       });
   });
@@ -101,16 +101,16 @@ describe('HTTP', function() {
     return testUser.save( ).then( function( user ) {
       previous = user.get( "avatar" );
 
-      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").thumb );
       //return user.destroy( );
     })
     .then(function( ) {
       /*
-      assert.throws( function( ) { fs.statSync( previous.thumb ) }, 
+      assert.throws( function( ) { fs.statSync( "." + previous.thumb ) }, 
                     "Old thumb still exists" );
-      assert.throws( function( ) { fs.statSync( previous.original ) }, 
+      assert.throws( function( ) { fs.statSync( "." + previous.original ) }, 
                     "Old original still exists" );
-      assert.throws( function( ) { fs.statSync( previous.medium ) }, 
+      assert.throws( function( ) { fs.statSync( "." + previous.medium ) }, 
                     "Old medium still exists" );
                    */
     });

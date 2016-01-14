@@ -43,7 +43,7 @@ module.exports = function(Bookshelf, pluginOpts) {
             get( ) {
               if( this.get( `${field}_file_name` ) )
                 return _.mapValues( styles, ( style, styleName ) => {
-                  return path.join( this.imageClipProcessor
+                  return path.join( "/", this.imageClipProcessor
                                         .generateFilePath( 
                                           basePath, field, styleName, 
                                           this.get( `${field}_file_name` ) ), 
@@ -97,7 +97,6 @@ module.exports = function(Bookshelf, pluginOpts) {
                   .generateFilePath(basePath, field, styleName, fileName);
               return new Promise( ( resolve, reject ) => { 
                 const file = this.imageClipAdapter.getFilePath(attributes[ `${field}_source`], reject);
-                console.info( file );
                 return styleOpts.process( gm(file), model, attributes, opts )
                     .stream( (err, stdout, stderr) => { 
                       if( err )

@@ -65,18 +65,18 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
       serialized.avatar.should.have.property( "medium" );
       serialized.avatar.should.have.property( "thumb" );
 
-      fs.statSync( user.get("avatar").original );
-      fs.statSync( user.get("avatar").medium );
-      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").original );
+      fs.statSync( "." + user.get("avatar").medium );
+      fs.statSync( "." + user.get("avatar").thumb );
     })
   });
   it('should overload attributes when data passed through save as object', function() {
@@ -86,18 +86,18 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
       serialized.avatar.should.have.property( "medium" );
       serialized.avatar.should.have.property( "thumb" );
 
-      fs.statSync( user.get("avatar").original );
-      fs.statSync( user.get("avatar").medium );
-      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").original );
+      fs.statSync( "." + user.get("avatar").medium );
+      fs.statSync( "." + user.get("avatar").thumb );
     });
   });
   it('should overload attributes when data passed through save as arguments', function() {
@@ -107,18 +107,18 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
+      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
+      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
       serialized.avatar.should.have.property( "medium" );
       serialized.avatar.should.have.property( "thumb" );
 
-      fs.statSync( user.get("avatar").original );
-      fs.statSync( user.get("avatar").medium );
-      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").original );
+      fs.statSync( "." + user.get("avatar").medium );
+      fs.statSync( "." + user.get("avatar").thumb );
     });
   });
 
@@ -134,7 +134,7 @@ describe('Bookshelf', function() {
       return User.forge( { id: id } ).fetch( )
     } )
     .then( function( user ) {
-      user.get("avatar").thumb.should.equal("images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
     } );
   } );
   it('should return undefined when not set', function( done ) {
@@ -155,9 +155,9 @@ describe('Bookshelf', function() {
       serialized.avatar.should.have.property( "medium" );
       serialized.avatar.should.have.property( "thumb" );
 
-      fs.statSync( user.get("avatar").original );
-      fs.statSync( user.get("avatar").medium );
-      fs.statSync( user.get("avatar").thumb );
+      fs.statSync( "." + user.get("avatar").original );
+      fs.statSync( "." + user.get("avatar").medium );
+      fs.statSync( "." + user.get("avatar").thumb );
     });
   });
 
