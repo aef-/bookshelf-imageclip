@@ -5,44 +5,16 @@ var Promise = require('bluebird'),
     fs = Promise.promisifyAll(require('fs-extra')),
     assert = require('assert');
 
-var knex = require('knex')({
-  client: 'sqlite3',
-  connection: { filename: "./testdb" }
-});
-
-var bookshelf = require('bookshelf')(knex);
-bookshelf.plugin('registry');
-bookshelf.plugin(require('../src/imageclip'), {useImageMagick: true, adapter: 'http'});
-const User = bookshelf.Model.extend({
-  tableName: 'users',
-  imageClip: {
-    avatar: {
-      original: {
-        process: function( gmInst, model ) {
-          return gmInst;
-        }
-      },
-      medium: {
-        process: function( gmInst, model ) {
-          return gmInst.resize( "500x500" ) ;
-        }
-      },
-      thumb: {
-        process: function( gmInst, model ) {
-          return gmInst.resize( "100x100" ) ;
-        }
-      }
-    }
-  }
-});
+const db = require('./fixtures/db')( { adapter: 'http'} );
+const User = require('./fixtures/user');
 
 describe('HTTP', function() {
   this.timeout(20000);
 
   beforeEach(function() {
-    return knex.schema.dropTableIfExists('users')
+    return db.knex.schema.dropTableIfExists('users')
       .then(function() {
-        return knex.schema.createTable('users', function(t) {
+        return db.knex.schema.createTable('users', function(t) {
           t.increments('id').primary();
           t.string('avatar_file_name');
         });

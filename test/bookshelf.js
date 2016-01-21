@@ -1,61 +1,45 @@
 'use strict';
 
-var Promise = require('bluebird'),
+const Promise = require('bluebird'),
     should  = require('should'),
     fs = Promise.promisifyAll(require('fs-extra'));
 
-var knex = require('knex')({
-  client: 'sqlite3',
-  connection: { filename: "./testdb" }
-});
-
-var bookshelf = require('bookshelf')(knex);
-bookshelf.plugin('registry');
-bookshelf.plugin(require('../src/imageclip.js'), {useImageMagick: true});
-
-const User = bookshelf.Model.extend({
-  tableName: 'users',
-  virtuals: { 
-    noopVirtual: {
-      set( ) { },
-      get( ) { return "noop"; }
-    },
-  },
-  imageClip: {
-    avatar: {
-      original: {
-        process: function( gmInst, model ) {
-          return gmInst;
-        }
-      },
-      medium: {
-        process: function( gmInst, model ) {
-          return gmInst.resize( "500x500" ) ;
-        }
-      },
-      thumb: {
-        process: function( gmInst, model ) {
-          return gmInst.resize( "100x100" ) ;
-        }
-      }
-    }
-  }
-});
+const db = require('./fixtures/db')( );
+const User = require('./fixtures/user');
+const Post = require('./fixtures/post');
+const Image = require('./fixtures/image');
 
 describe('Bookshelf', function() {
   this.timeout(10000);
 
   beforeEach(function() {
-    return knex.schema.dropTableIfExists('users')
-      .then(function() {
-        return knex.schema.createTable('users', function(t) {
-          t.increments('id').primary();
-          t.string('avatar_file_name');
-        });
-      })
-      .then( ( ) => {
-        return fs.removeAsync( './images' );
-      } )
+    return Promise.all([ 
+      db.knex.schema.dropTableIfExists('users'),
+      db.knex.schema.dropTableIfExists('posts'),
+      db.knex.schema.dropTableIfExists('images'),
+    ])
+    .then(function() {
+      return db.knex.schema.createTable('users', function(t) {
+        t.increments('id').primary();
+        t.string('avatar_file_name');
+      });
+    })
+    .then( ( ) => {
+      return db.knex.schema.createTable('posts', function(t) {
+        t.increments('id').primary();
+      });
+    } )
+    .then( ( ) => {
+      return db.knex.schema.createTable('images', function(t) {
+        t.increments('id').primary();
+        t.string('poster_file_name');
+        t.integer('imageable_id');
+        t.string('imageable_type');
+      });
+    } )
+    .then( ( ) => {
+      return fs.removeAsync( './images' );
+    } )
   });
 
   it('should overload attributes when data passed through forge', function() {
@@ -126,6 +110,7 @@ describe('Bookshelf', function() {
     var testUser = User.forge();
     testUser.get( "noopVirtual" ).should.equal( "noop" );
   } );
+
   it('should save filename to database', function() {
     var testUser = User.forge();
 
@@ -161,5 +146,41 @@ describe('Bookshelf', function() {
     });
   });
 
-
+  it('should work with morphMany and withRelated', function() {
+    const testPost = Post.forge();
+    const testUser = User.forge();
+    return testPost.save( )
+    .then(function(post) {
+      return Image.forge({ 
+        poster: "./test/fixtures/earth.jpg",
+        imageable_type: "posts",
+        imageable_id: post.get("id"),
+      }).save( )
+    })
+    .then( image => {
+      return testPost.fetch({ withRelated: ['images'] })
+    })
+    .then( postWithImages => {
+      return testUser.save( )
+    })
+    .then( user => {
+      return Image.forge({ 
+        poster: "./test/fixtures/earth.jpg",
+        imageable_type: "users",
+        imageable_id: user.get("id"),
+      }).save( )
+    })
+    .then( post => {
+      return testUser.fetch({ withRelated: ['album'] })
+    })
+    .then( userWithAlbum => {
+      return testUser.fetch({ withRelated: ['favoritePicture'] })
+    })
+    .then( post => {
+      return testUser.fetch({ withRelated: ['album'] })
+    })
+    .then( userWithAlbum => {
+      return testUser.fetch({ withRelated: ['favoritePicture'] })
+    })
+  });
 });
