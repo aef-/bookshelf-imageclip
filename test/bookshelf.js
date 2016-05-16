@@ -49,9 +49,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -70,9 +70,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -91,9 +91,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.equal("/images/704/247/avatar/original/earth.jpg")
-      user.get("avatar").medium.should.equal("/images/704/247/avatar/medium/earth.jpg")
-      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -110,6 +110,19 @@ describe('Bookshelf', function() {
     var testUser = User.forge();
     testUser.get( "noopVirtual" ).should.equal( "noop" );
   } );
+  it('should clean quotes from filename', function() {
+    var testUser = User.forge();
+
+    return testUser.save( "avatar", "./test/fixtures/earth's weird filename.jpg").then(user => {
+      const id = user.get( "id" );
+      return User.forge( { id: id } ).fetch( )
+    } )
+    .then( function( user ) {
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earthsweirdfilename.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earthsweirdfilename.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earthsweirdfilename.jpg/)
+    } );
+  } );
 
   it('should save filename to database', function() {
     var testUser = User.forge();
@@ -119,7 +132,9 @@ describe('Bookshelf', function() {
       return User.forge( { id: id } ).fetch( )
     } )
     .then( function( user ) {
-      user.get("avatar").thumb.should.equal("/images/704/247/avatar/thumb/earth.jpg")
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
     } );
   } );
   it('should return undefined when not set', function( done ) {

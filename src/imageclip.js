@@ -133,7 +133,7 @@ module.exports = function(Bookshelf, pluginOpts) {
       },
 
       generateFileName(fieldValue) {
-        return path.basename( Math.round(Math.random( ) * 10000) + fieldValue.split('?')[0]);
+        return Math.round(Math.random( ) * 100000) + path.basename(fieldValue.split('?')[0]).replace(/([^a-z0-9.]+)/gi, '');
       },
 
       generateFilePath(basePath, fieldName, styleName, fileName) {
