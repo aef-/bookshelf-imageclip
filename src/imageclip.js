@@ -90,6 +90,9 @@ module.exports = function(Bookshelf, pluginOpts) {
         const attributes = _.extend({ }, model.attributes, attrs );
 
         return _.flatten( _.map( this.imageClip, ( styles, field ) => {
+          if(!model.hasChanged( `${field}_file_name` ))
+            return; 
+
           return _.map( styles, ( styleOpts, styleName ) => {
             const fileName = model.get( `${field}_file_name` );
             if( fileName ) {

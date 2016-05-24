@@ -10,7 +10,7 @@ const Post = require('./fixtures/post');
 const Image = require('./fixtures/image');
 
 describe('Bookshelf', function() {
-  this.timeout(10000);
+  this.timeout(15000);
 
   beforeEach(function() {
     return Promise.all([ 
@@ -22,6 +22,7 @@ describe('Bookshelf', function() {
       return db.knex.schema.createTable('users', function(t) {
         t.increments('id').primary();
         t.string('avatar_file_name');
+        t.string('username');
       });
     })
     .then( ( ) => {
@@ -144,13 +145,13 @@ describe('Bookshelf', function() {
   } );
 
   it('should save jpeg', function() {
-    var testUser = User.forge();
+    const testUser = User.forge();
     return testUser.save( "avatar", "./test/fixtures/earth.jpg").then(function(user) {
       user.get("avatar").should.have.property( "original" );
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      var serialized = testUser.toJSON( );
+      const serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
       serialized.avatar.should.have.property( "medium" );
       serialized.avatar.should.have.property( "thumb" );
@@ -158,6 +159,28 @@ describe('Bookshelf', function() {
       fs.statSync( "." + user.get("avatar").original );
       fs.statSync( "." + user.get("avatar").medium );
       fs.statSync( "." + user.get("avatar").thumb );
+    });
+  });
+
+  it('should update ancillary attributes without image being passed', function() {
+    const testUser = User.forge();
+    return testUser.save( "avatar", "./test/fixtures/earth.jpg")
+    .then(function(user) {
+      const file = fs.statSync( "." + user.get("avatar").medium );
+      const modifiedTime = file.mtime.toString();
+      return user.save({ username: "name1" })
+      .delay( 1000 )
+      .then(function(user) {
+        user.get("username").should.equal('name1');
+        return User.forge().where({ id: user.get('id') }).fetch();
+      }).then(function(user) {
+        return user.save({ username: 'name2' })
+      }).then(function(user) {
+        const file = fs.statSync( "." + user.get("avatar").medium );
+        //Checks to make sure image is not reprocessed since it hasn't changed.
+        file.mtime.toString().should.equal(modifiedTime);
+        user.get("username").should.equal('name2');
+      });
     });
   });
 
