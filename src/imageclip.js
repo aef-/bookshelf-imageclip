@@ -24,50 +24,83 @@ module.exports = function(Bookshelf, pluginOpts) {
   const proto = Bookshelf.Model.prototype;
 
   const Model = Bookshelf.Model.extend({
-    virtuals: { },
     constructor: function( ) {
-      proto.constructor.apply( this, arguments );
-      if( this.imageClip) {
-        const basePath  = options.path;
-        if( typeof options.storage == "string" )
-          this.imageClipStorage = new ( require( "./storage/" + options.storage ) );
-        else
-          this.imageClipStorage = options.storage;
+      if( typeof options.storage == "string" )
+        this.imageClipStorage = new ( require( "./storage/" + options.storage ) );
+      else
+        this.imageClipStorage = options.storage;
 
-        if( typeof options.storage == "string" )
-          this.imageClipAdapter = require( "./adapters/" + options.adapter );
-        else
-          this.imageClipAdapter = options.adapter;
+      if( typeof options.storage == "string" )
+        this.imageClipAdapter = require( "./adapters/" + options.adapter );
+      else
+        this.imageClipAdapter = options.adapter;
 
-        _.each( this.imageClip, ( styles, field ) => {
+      if(this.imageClip && !this.imageClipProcessor.isLoaded) {
+        this.imageClipProcessor.isLoaded = true;
+        for (const field in this.imageClip) {
           Object.defineProperty(this, field, {
             enumerable: true,
-            get( ) {
-              if( this.get( `${field}_file_name` ) )
-                return _.mapValues( styles, ( style, styleName ) => {
-                  return path.join( "/", this.imageClipProcessor
-                    .generateFilePath(
-                      basePath, field, styleName,
-                      this.get( `${field}_file_name` ) ),
-                    this.get( `${field}_file_name` ) );
-                } );
-            },
-            set( source ) {
-              this.set( `${field}_source`, source );
-
-              this.set( `${field}_file_name`,
-                this.imageClipProcessor.generateFileName(
-                  this.imageClipAdapter.getFileName( source ) ) );
-            }
-          })
-        });
+            get: this.getField.bind(this, field),
+            set: this.setField.bind(this, field),
+          });
+        }
 
         this.on( "saving", this.imageClipProcessor.save );
         this.on( "destroyed", this.imageClipProcessor.destroy );
       }
+      proto.constructor.apply( this, arguments );
     },
 
-    format: function( attributes ) {
+    get(field, ...params) {
+      const { imageClip } = this;
+      if( _.isObject(imageClip) && imageClip[field] )
+        return this.getField(field);
+
+      return proto.get.apply(this, arguments);
+    },
+
+    set(key, value, ...params) {
+      const { imageClip } = this;
+      if(_.isObject(imageClip)) {
+        if(_.isObject(key)) {
+          _.each(key, (v, k) => {
+            if (imageClip[k]) {
+              delete key[k];
+              this.setField(k, v, ...params);
+            }
+          });
+        }
+        else if (imageClip[key]) {
+          return this.setField(key, value, ...params)
+        }
+      }
+
+      return proto.set.call(this, key, value, ...params);
+    },
+
+    getField(field) {
+      const { imageClip } = this;
+      const basePath  = options.path;
+      if (this.get( `${field}_file_name` )) {
+        return _.mapValues(imageClip[field], ( process, styleName ) => {
+          return path.join( "/", this.imageClipProcessor
+            .generateFilePath(
+              basePath, field, styleName,
+              this.get( `${field}_file_name` ) ),
+            this.get( `${field}_file_name` ) );
+        } );
+      }
+    },
+
+    setField(field, source, ...params) {
+      proto.set.call(this, `${field}_source`, source );
+
+      proto.set.call(this, `${field}_file_name`,
+        this.imageClipProcessor.generateFileName(
+          this.imageClipAdapter.getFileName( source ) ) );
+    },
+
+    format( attributes ) {
       const formattedAttributes = proto.format.apply( this, arguments );
 
       if( this.imageClip) {
@@ -80,8 +113,9 @@ module.exports = function(Bookshelf, pluginOpts) {
     },
 
     imageClipProcessor: {
+      isLoaded: false,
       save( model, attributes, opts ) {
-        return Promise.all( 
+        return Promise.all(
                 this.imageClipProcessor.saveImages.apply( this, arguments ) );
       },
 
@@ -147,18 +181,11 @@ module.exports = function(Bookshelf, pluginOpts) {
       },
     },
     toJSON(options) {
-      let attrs = proto.toJSON.call(this, options);
-      if (options && options.omitNew && this.isNew()) {
-        return attrs;
-      }
-      if (!options || options.virtuals !== false) {
-        if ((options && options.virtuals === true) || this.outputVirtuals) {
-          attrs = _.extend(attrs, getVirtuals(this, options && options.virtualParams));
-        }
-      }
-      return attrs;
-    },
+      const attrs = proto.toJSON.call(this, options);
+      const virtuals = _.mapValues(this.imageClip, (v, k) => this.getField(k))
 
+      return _.extend(attrs, virtuals);
+    },
   } );
 
   Bookshelf.Model = Model;

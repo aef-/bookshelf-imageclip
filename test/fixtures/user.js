@@ -1,11 +1,10 @@
 const db = require('./db')( );
 const User = db.bookshelf.Model.extend({
   tableName: 'users',
-  virtuals: { 
-    noopVirtual: {
-      set( ) { },
-      get( ) { return "noop"; }
-    },
+  virtuals: {
+    fullName: function() {
+      return this.get('firstName') + ' ' + this.get('lastName');
+    }
   },
   imageClip: {
     avatar: {

@@ -12,36 +12,27 @@ const Image = require('./fixtures/image');
 describe('Bookshelf', function() {
   this.timeout(15000);
 
-  beforeEach(function() {
-    return Promise.all([ 
+  beforeEach(() => Promise.all([
       db.knex.schema.dropTableIfExists('users'),
       db.knex.schema.dropTableIfExists('posts'),
       db.knex.schema.dropTableIfExists('images'),
     ])
-    .then(function() {
-      return db.knex.schema.createTable('users', function(t) {
+    .then(() => db.knex.schema.createTable('users', function(t) {
         t.increments('id').primary();
         t.string('avatar_file_name');
         t.string('username');
-      });
-    })
-    .then( ( ) => {
-      return db.knex.schema.createTable('posts', function(t) {
+      }))
+    .then( ( ) => db.knex.schema.createTable('posts', function(t) {
         t.increments('id').primary();
-      });
-    } )
-    .then( ( ) => {
-      return db.knex.schema.createTable('images', function(t) {
+      }))
+    .then( ( ) => db.knex.schema.createTable('images', function(t) {
         t.increments('id').primary();
         t.string('poster_file_name');
         t.integer('imageable_id');
         t.string('imageable_type');
-      });
-    } )
-    .then( ( ) => {
-      return fs.removeAsync( './images' );
-    } )
-  });
+      }))
+    .then( ( ) => fs.removeAsync( './images' ))
+  );
 
   it('should overload attributes when data passed through forge', function() {
     var testUser = User.forge({ avatar: "./test/fixtures/earth.jpg"});
@@ -50,9 +41,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
-      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
-      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{4,5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{4,5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{4,5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -71,9 +62,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
-      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
-      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{1,5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{1,5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{1,5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -92,9 +83,9 @@ describe('Bookshelf', function() {
       user.get("avatar").should.have.property( "medium" );
       user.get("avatar").should.have.property( "thumb" );
 
-      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
-      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
-      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{1,5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{1,5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{1,5}earth.jpg/)
 
       var serialized = testUser.toJSON( );
       serialized.avatar.should.have.property( "original" );
@@ -107,10 +98,6 @@ describe('Bookshelf', function() {
     });
   });
 
-  it('should not override existing virtuals', function() {
-    var testUser = User.forge();
-    testUser.get( "noopVirtual" ).should.equal( "noop" );
-  } );
   it('should clean quotes from filename', function() {
     var testUser = User.forge();
 
@@ -119,9 +106,9 @@ describe('Bookshelf', function() {
       return User.forge( { id: id } ).fetch( )
     } )
     .then( function( user ) {
-      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earthsweirdfilename.jpg/)
-      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earthsweirdfilename.jpg/)
-      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earthsweirdfilename.jpg/)
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{1,5}earthsweirdfilename.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{1,5}earthsweirdfilename.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{1,5}earthsweirdfilename.jpg/)
     } );
   } );
 
@@ -133,9 +120,9 @@ describe('Bookshelf', function() {
       return User.forge( { id: id } ).fetch( )
     } )
     .then( function( user ) {
-      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{5}earth.jpg/)
-      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{5}earth.jpg/)
-      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{5}earth.jpg/)
+      user.get("avatar").original.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/original\/\d{1,5}earth.jpg/)
+      user.get("avatar").medium.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/medium\/\d{1,5}earth.jpg/)
+      user.get("avatar").thumb.should.match(/\/images\/[0-9a-z]{3}\/[0-9a-z]{3}\/avatar\/thumb\/\d{1,5}earth.jpg/)
     } );
   } );
   it('should return undefined when not set', function( done ) {
@@ -189,7 +176,7 @@ describe('Bookshelf', function() {
     const testUser = User.forge();
     return testPost.save( )
     .then(function(post) {
-      return Image.forge({ 
+      return Image.forge({
         poster: "./test/fixtures/earth.jpg",
         imageable_type: "posts",
         imageable_id: post.get("id"),
@@ -202,7 +189,7 @@ describe('Bookshelf', function() {
       return testUser.save( )
     })
     .then( user => {
-      return Image.forge({ 
+      return Image.forge({
         poster: "./test/fixtures/earth.jpg",
         imageable_type: "users",
         imageable_id: user.get("id"),
