@@ -9,7 +9,7 @@ module.exports = function(Bookshelf, pluginOpts) {
     crypto  = require('crypto'),
     md5     = crypto.createHash('md5');
 
-  const options = _.defaults( pluginOpts || { }, { 
+  const options = _.defaults( pluginOpts || { }, {
     useImageMagick: false,
     path: "./images",
     storage: "file",
@@ -35,6 +35,8 @@ module.exports = function(Bookshelf, pluginOpts) {
       else
         this.imageClipAdapter = options.adapter;
 
+      this.on( "saving", this.imageClipProcessor.save );
+      this.on( "destroyed", this.imageClipProcessor.destroy );
       if(this.imageClip && !this.imageClipProcessor.isLoaded) {
         this.imageClipProcessor.isLoaded = true;
         for (const field in this.imageClip) {
@@ -45,8 +47,6 @@ module.exports = function(Bookshelf, pluginOpts) {
           });
         }
 
-        this.on( "saving", this.imageClipProcessor.save );
-        this.on( "destroyed", this.imageClipProcessor.destroy );
       }
       proto.constructor.apply( this, arguments );
     },
